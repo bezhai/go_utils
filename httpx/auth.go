@@ -11,31 +11,35 @@ import (
 
 func ServerAuthMiddleware(secret string) app.HandlerFunc {
 	return func(c context.Context, ctx *app.RequestContext) {
+
+		if string(ctx.Request.Method()) == http.MethodGet {
+			ctx.Next(c)
+			return
+		}
+
 		salt := ctx.Request.Header.Get("X-Salt")
 		if salt == "" {
-			ctx.String(http.StatusForbidden, "missing salt")
+			ctx.AbortWithMsg("missing salt", http.StatusForbidden)
 			return
 		}
 
 		clientToken := ctx.Request.Header.Get("X-Token")
 		if clientToken == "" {
-			ctx.String(http.StatusForbidden, "missing token")
+			ctx.AbortWithMsg("missing token", http.StatusForbidden)
 			return
 		}
 
 		bodyBytes, err := ctx.Body()
 		if err != nil {
-			ctx.String(http.StatusForbidden, "cannot read body")
+			ctx.AbortWithMsg("cannot read body", http.StatusForbidden)
 			return
 		}
 
 		serverToken := authx.GenerateToken(salt, string(bodyBytes), secret)
 
 		if serverToken != clientToken {
-			ctx.String(http.StatusForbidden, "invalid token")
+			ctx.AbortWithMsg("invalid token", http.StatusForbidden)
 			return
 		}
-
-		ctx.Next(c)
 	}
 }
