@@ -2,10 +2,8 @@ package httpx
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"reflect"
 
@@ -43,16 +41,6 @@ func SendRequest[T any](ctx context.Context, c *client.Client, url string, extra
 
 	if err != nil {
 		hlog.CtxWarnf(ctx, "http request return fail, error:%+v", err)
-		return
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		err = errors.New(fmt.Sprintf("http request return fail, code: %d, msg: %s",
-			resp.StatusCode(),
-			string(resp.Body())))
-		hlog.CtxWarnf(ctx, "http request return fail, code: %d, msg: %s",
-			resp.StatusCode(),
-			string(resp.Body()))
 		return
 	}
 
