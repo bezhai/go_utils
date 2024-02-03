@@ -18,7 +18,7 @@ import (
 
 type RequestExtraFunc func(req *protocol.Request, resp *protocol.Response) error
 
-func SendRequest[T any](ctx context.Context, c *client.Client, url string, extraFuncList ...RequestExtraFunc) (respBody T, err error) {
+func SendRequestWithHeaderResp[T any](ctx context.Context, c *client.Client, url string, extraFuncList ...RequestExtraFunc) (respBody T, respHeader []map[string]string, err error) {
 
 	isPointer := false
 	if typeof := reflect.TypeOf(respBody); typeof.Kind() == reflect.Pointer {
@@ -44,6 +44,12 @@ func SendRequest[T any](ctx context.Context, c *client.Client, url string, extra
 		return
 	}
 
+	for _, header := range resp.Header.GetHeaders() {
+		respHeader = append(respHeader, map[string]string{
+			string(header.GetKey()): string(header.GetValue()),
+		})
+	}
+
 	body := resp.Body()
 	if len(body) > 0 {
 		if _, ok1 := any(respBody).([]byte); ok1 {
@@ -63,6 +69,11 @@ func SendRequest[T any](ctx context.Context, c *client.Client, url string, extra
 		}
 	}
 
+	return
+}
+
+func SendRequest[T any](ctx context.Context, c *client.Client, url string, extraFuncList ...RequestExtraFunc) (respBody T, err error) {
+	respBody, _, err = SendRequestWithHeaderResp[T](ctx, c, url, extraFuncList...)
 	return
 }
 
